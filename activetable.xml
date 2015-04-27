@@ -1,0 +1,118 @@
+<problem display_name="webGLDemo">
+<script type="loncapa/python">
+<![CDATA[
+def grader(e, ans):
+    state = json.loads(json.loads(ans)['answer'])
+    response = state['response']
+    colors = state['colors']
+    #return {'ok': False, 'msg': '%s' % str(response)}
+    
+    Numeric = 'NUMERIC_RESPONSE'
+    questionTable = [
+        ['Carts','v_initial','v_final','Delta v'],
+        ['green','2.0','-1.2',Numeric],
+        ['red','-2.0','1.2',Numeric],
+    ]
+
+    answerTable = [
+        ['Carts','v_initial','v_final','Delta v'],
+        ['green','2.0','-1.2','-3.2'],
+        ['red','-2.0','1.2','3.2'],
+    ]
+    
+    ### Must remove header for comparison in loop below
+    ### JQuery takes cells without a header, so i,j values must only be fore table body.
+    answerTable = answerTable[1::]
+
+    def stringComparison(R,K):
+        '''
+        R: Response from student
+        K: Answer from (K)ey
+        '''
+        if str(R)==str(K):
+            return True
+        else:
+            return False
+    
+    def testNumeric(X):
+        '''
+        X: entry taken from Active Table
+        '''
+        try:
+            float(X)
+            return True
+        except:
+            return False
+    
+    def numericalComparison(R,K,**kwargs):
+        '''
+        R: Response from student 
+        K: Answer from (K)ey
+        tolerance: percentage tolerance allowed in numerical response
+            *** Implement edX tolerance: https://github.com/edx/edx-platform/blob/dbc465a51871bd685dd925c23bf73b981e07abe6/common/lib/capa/capa/util.py#L14
+            Currently Calculated:  return 100.*abs(student - instructor)/instructor <= tolerance
+        '''
+        percent_tolerance = kwargs.get('percent_tolerance',1.0)
+        
+        if testNumeric(R) and testNumeric(K):
+            #print 100.*abs(abs(float(R) - float(K))/float(K))
+            return 100.*abs(abs(float(R) - float(K))/float(K)) <= percent_tolerance
+        else:
+            #print "Issue with grading rubric. Could not convert Response to float."
+            return False
+    
+    def returnID(row,column):
+        return str(row)+'___'+str(column).replace(' ','')
+    
+    def feedback(cellType,R,K):
+        '''
+        cellType: type of cell input, options are [NUMERIC_RESPONSE,STRING_RESPONSE]
+        R: short-hand for student Response Value
+        K: short-hand for answer Key Value
+        '''
+        if cellType == 'NUMERIC_RESPONSE':
+            #print R,K
+            return numericalComparison(R,K,percent_tolerance=1.0)
+            #return stringComparison(R,K)
+        elif cellType == 'STRING_RESPONSE':
+            return stringComparison(R,K)
+                
+    
+    ### GRADING LOOP
+    ### Loop through question Table and use indices to check answer table
+    header = questionTable[0]
+    numCorrects = 0
+    for i,row in enumerate(questionTable[1::]):
+        for j,cellType in enumerate(row):
+            ID = returnID(i,header[j])
+            #print i,j,header[j],ID,answerTable[i][j]
+            
+            ### Check for Existent Active Cell
+            if ID in response:
+                ### Compare answer key and contents of cell
+                if feedback(cellType, response[ID], answerTable[i][j]):
+                    numCorrects = numCorrects + 1
+                else:
+                    state['colors'][ID] = 'LightPink'
+    
+    if numCorrects == len(response.keys()):
+        return {'ok': True, 'msg':'Great job!'}
+    else:
+        return {'ok': False, 'msg': 'You have %s cells out of %s correct.' % (str(numCorrects),str(len(response.keys()))) }
+
+]]>
+</script>
+<p>
+Testing out an active table.
+</p>
+<customresponse cfn="grader">
+  <jsinput gradefn="getInput"
+    get_statefn="getState"
+    set_statefn="setState"
+    initial_state='{}'
+    width="400"
+    height="150"
+    html_file="/static/test.html"
+    sop="true"/>
+</customresponse>
+</problem>
