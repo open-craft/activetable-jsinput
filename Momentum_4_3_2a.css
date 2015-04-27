@@ -1,0 +1,46 @@
+body {
+    margin: 10px;
+}
+input[type="text"] {
+    font-size: 12px;
+}
+input[type="text"].placeholder {
+    color: Gray;
+    border: 1px;
+    padding: 0 10px;
+    margin: 0;
+}
+input[type="text"]:focus {
+    color: RoyalBlue;
+    this.value ='';
+}
+.dataframe {
+    font-size: 18px;
+    color: #333333;
+    width: 100%;
+    border-width: 1px;
+    border-color: #729ea5;
+    border-collapse: collapse;
+}
+.dataframe  th {
+    font-size: 18px;
+    background-color: #acc8cc;
+    border-width: 1px;
+    padding: 8px;
+    border-style: solid;
+    border-color: #729ea5;
+    text-align: left;
+}
+.dataframe  tr {
+    background-color: #d4e3e5;
+}
+.dataframe  td {
+    font-size: 18px;
+    border-width: 1px;
+    padding: 8px;
+    border-style: solid;
+    border-color: #729ea5;
+}
+.dataframe  tr:hover {
+    background-color: #ffffff;
+}
