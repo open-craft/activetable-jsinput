@@ -1,115 +1,141 @@
-<problem display_name="webGLDemo">
+<problem display_name="ActiveTable">
 <script type="loncapa/python">
 <![CDATA[
-def grader(e, ans):
-    state = json.loads(json.loads(ans)['answer'])
-    response = state['response']
-    colors = state['colors']
-    #return {'ok': False, 'msg': '%s' % str(response)}
-    
-    Numeric = 'NUMERIC_RESPONSE'
-    questionTable = [
-        ['Carts','v_initial','v_final','Delta v'],
-        ['green','2.0','-1.2',Numeric],
-        ['red','-2.0','1.2',Numeric],
-    ]
+import json
+import re
 
-    answerTable = [
-        ['Carts','v_initial','v_final','Delta v'],
-        ['green','2.0','-1.2','-3.2'],
-        ['red','-2.0','1.2','3.2'],
-    ]
-    
-    ### Must remove header for comparison in loop below
-    ### JQuery takes cells without a header, so i,j values must only be fore table body.
-    answerTable = answerTable[1::]
+## Library part
+# You usually don't need to touch this portion and can jump to "Problem definition".
 
-    def stringComparison(R,K):
-        '''
-        R: Response from student
-        K: Answer from (K)ey
-        '''
-        if str(R)==str(K):
-            return True
-        else:
-            return False
-    
-    def testNumeric(X):
-        '''
-        X: entry taken from Active Table
-        '''
+class ResponseCell(object):
+    """Abstract base class for response cells."""
+
+    TYPE = 0
+
+    def get_state(self):
+        """Return a dictionary describing the instance for sending to the JS code."""
+        d = vars(self).copy()
+        d.update(type=self.TYPE)
+        return d
+
+
+class Numeric(ResponseCell):
+    """A numeric response cell."""
+
+    TYPE = 1
+
+    def __init__(self, answer, tolerance=None):
+        """Set the correct answer and the allowed relative tolerance in percent."""
+        self.answer = answer
+        if tolerance is None:
+            tolerance = default_tolerance
+        self.abs_tolerance = abs(answer) * tolerance / 100.0
+
+    def check_response(self, student_response):
+        """Return a Boolean value indicating whether the student response is correct."""
         try:
-            float(X)
-            return True
-        except:
+            r = float(student_response)
+        except ValueError:
             return False
-    
-    def numericalComparison(R,K,**kwargs):
-        '''
-        R: Response from student 
-        K: Answer from (K)ey
-        tolerance: percentage tolerance allowed in numerical response
-            *** Implement edX tolerance: https://github.com/edx/edx-platform/blob/dbc465a51871bd685dd925c23bf73b981e07abe6/common/lib/capa/capa/util.py#L14
-            Currently Calculated:  return 100.*abs(student - instructor)/instructor <= tolerance
-        '''
-        percent_tolerance = kwargs.get('percent_tolerance',1.0)
-        
-        if testNumeric(R) and testNumeric(K):
-            #print 100.*abs(abs(float(R) - float(K))/float(K))
-            return 100.*abs(abs(float(R) - float(K))/float(K)) <= percent_tolerance
-        else:
-            #print "Issue with grading rubric. Could not convert Response to float."
+        return abs(r - self.answer) <= self.abs_tolerance
+
+
+class String(ResponseCell):
+    """A string response cell."""
+
+    TYPE = 2
+
+    def __init__(self, answer):
+        """Set the correct answer."""
+        self.answer = answer
+
+    def check_response(self, student_response):
+        """Return a Boolean value indicating whether the student response is correct."""
+        return student_response == self.answer
+
+
+def init(table):
+    data = [
+        [cell.get_state() if isinstance(cell, ResponseCell) else str(cell) for cell in row]
+        for row in table
+    ]
+    # Curiously, quotes in the JSON string must be double-escaped.
+    return json.dumps(data).replace('"', '&amp;quot;')
+
+
+def check_consistency(state):
+    """Check whether the state of the table is consistent with the initial state.
+
+    If not, the problem was edited in the mean time, and we ask the student to click
+    the reset button (as we can't initiate resetting the problem from code).
+    """
+    if len(table) != len(state):
+        return False
+    for row, row_state in zip(table, state):
+        if len(row) != len(row_state):
             return False
-    
-    def returnID(row,column):
-        return str(row)+'___'+str(column).replace(' ','')
-    
-    def feedback(cellType,R,K):
-        '''
-        cellType: type of cell input, options are [NUMERIC_RESPONSE,STRING_RESPONSE]
-        R: short-hand for student Response Value
-        K: short-hand for answer Key Value
-        '''
-        if cellType == 'NUMERIC_RESPONSE':
-            #print R,K
-            return numericalComparison(R,K,percent_tolerance=1.0)
-            #return stringComparison(R,K)
-        elif cellType == 'STRING_RESPONSE':
-            return stringComparison(R,K)
-                
-    
-    ### GRADING LOOP
-    ### Loop through question Table and use indices to check answer table
-    header = questionTable[0]
-    numCorrects = 0
-    for i,row in enumerate(questionTable[1::]):
-        for j,cellType in enumerate(row):
-            ID = returnID(i,header[j])
-            #print i,j,header[j],ID,answerTable[i][j]
-            
-            ### Check for Existent Active Cell
-            if ID in response:
-                ### Compare answer key and contents of cell
-                if feedback(cellType, response[ID], answerTable[i][j]):
-                    numCorrects = numCorrects + 1
-                else:
-                    state['colors'][ID] = 'LightPink'
-    
-    if numCorrects == len(response.keys()):
-        return {'ok': True, 'msg':'Great job!'}
+        for cell, cell_state in zip(row, row_state):
+            if isinstance(cell, ResponseCell):
+                if not isinstance(cell_state, dict):
+                    return False
+                orig_state = cell.get_state()
+                if not all(orig_state[k] == cell_state[k] for k in orig_state):
+                    return False
+            else:
+                if not str(cell) == cell_state:
+                    return False
+    return True
+
+
+def check_table(unused_expect, ans):
+    ans = json.loads(ans)
+#    answer = json.loads(ans['answer'])
+    state = json.loads(ans['state'])
+
+    if not check_consistency(state):
+        return {
+            'ok': False,
+            'msg': 'The problem was edited by the course staff since the last time you '
+            'worked on it.  Please click the "Reset" button to get the latest version.'
+        }
+
+    correct_answers = total_questions = 0
+    for row, row_state in zip(table, state):
+        for cell, cell_state in zip(row, row_state):
+            if isinstance(cell, ResponseCell):
+                total_questions += 1
+                correct_answers += cell.check_response(cell_state['value'])
+
+    if correct_answers == total_questions:
+        return {'ok': True, 'msg': 'Great job!'}
     else:
-        return {'ok': False, 'msg': 'You have %s cells out of %s correct.' % (str(numCorrects),str(len(response.keys()))) }
+        return {
+            'ok': False,
+            'msg': 'You have {} cells out of {} correct.'.format(correct_answers, total_questions)
+        }
+
+## Problem definition
+
+default_tolerance = 1.0  # default tolerance in percent
+table = [
+    ['Carts', 'v_initial', 'v_final', 'Delta v'],
+    ['green', 2.0, -1.2, Numeric(answer=-3.2, tolerance=2.0)],
+    ['red', -2.0, 1.2, Numeric(answer=3.2, tolerance=2.0)],
+]
+
+# Initialisation -- don't remove!
+initial_state = init(table)
 
 ]]>
 </script>
 <p>
-Testing out an active table.
+  Testing out an active table.
 </p>
-<customresponse cfn="grader">
-  <jsinput gradefn="getInput"
-    get_statefn="getState"
-    set_statefn="setState"
-    initial_state='{}'
+<customresponse cfn="check_table">
+  <jsinput gradefn="ActiveTable.grade"
+    get_statefn="ActiveTable.getState"
+    set_statefn="ActiveTable.setState"
+    initial_state="$initial_state"
     width="400"
     height="150"
     html_file="/static/test.html"

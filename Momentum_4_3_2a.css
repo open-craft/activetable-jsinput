@@ -44,3 +44,9 @@ input[type="text"]:focus {
 .dataframe  tr:hover {
     background-color: #ffffff;
 }
+.wrong-answer {
+    background-color: #ffcccc;
+}
+.right-answer {
+    background-color: #ccffcc;
+}
