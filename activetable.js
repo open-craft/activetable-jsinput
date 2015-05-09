@@ -1,10 +1,12 @@
-var ActiveTableGen = function () {
+var ActiveTable = (function () {
     var  NUMERIC, STRING, check_response;
 
     // Input type values must match the type values in the Python code.
     NUMERIC = 1;
     STRING = 2;
 
+    // Correctness checks for numeric and string inputs.  These functions are
+    // reimplementations of the corresponding functions in the Python code.
     check_response = {};
     check_response[NUMERIC] = function(self, student_response) {
         var r = parseFloat(student_response);
@@ -15,8 +17,15 @@ var ActiveTableGen = function () {
         return student_response == self.answer;
     };
 
+    placeholder = {}
+    placeholder[NUMERIC] = 'number'
+    placeholder[STRING] = 'answer'
+
     function grade(state) {
-        console.log(state);
+        // This function attaches correctness information to each input field.
+        // This information is later used to colour the input cells.  The Python
+        // function embedded in XML determines correctness independently of this
+        // function.
         $('#activeTable input').each(function() {
             var $input = $(this), data = $input.data();
             $input.data('correct', check_response[data.type](data, this.value));
@@ -25,6 +34,8 @@ var ActiveTableGen = function () {
     }
 
     function getState() {
+        // Extract the current state of the table.  The state includes the
+        // complete problem description and the values entered by the student.
         var state = [];
         function appendRow() {
             var row_state = [];
@@ -46,28 +57,42 @@ var ActiveTableGen = function () {
     }
 
     function setState(state) {
+        // Regenerate the table based on the state data.  This function is also
+        // responsible for initially generating the table based on the initial
+        // state exported by the Python code and for setting the background
+        // colour of input fields based on the correctness information stored
+        // by the grader.
         var row_state, $row, cell_state, $cell, $input;
-        console.log(state);
         state = JSON.parse(state);
         for (var i = 0; i < state.length; i++) {
             row_state = state[i];
             $row = $('<tr>');
+            if (i % 2 === 0) {
+                $row.addClass('odd');
+            }
             for (var j = 0; j < row_state.length; j++) {
                 cell_state = row_state[j];
-                $cell = $('<td>');
+                if (i === 0) {
+                    $cell = $('<th>');
+                } else {
+                    $cell = $('<td>');
+                }
                 if (typeof cell_state === 'object') {
-                    $input = $('<input/>', {
-                        type: 'text',
-                        class: 'active',
-                        value: cell_state.value,
-                    });
                     if (cell_state.hasOwnProperty('correct')) {
                         if (cell_state.correct) {
-                            $input.addClass('right-answer');
+                            $cell.addClass('right-answer');
                         } else {
-                            $input.addClass('wrong-answer');
+                            $cell.addClass('wrong-answer');
                         }
+                    } else {
+                        $cell.addClass('active');
                     }
+                    $input = $('<input/>', {
+                        type: 'text',
+                        value: cell_state.value,
+                        placeholder: placeholder[cell_state.type],
+                        size: '10',
+                    });
                     $input.data(cell_state);
                     $cell.append($input);
                 } else {
@@ -88,6 +113,4 @@ var ActiveTableGen = function () {
         getState: getState,
         setState: setState,
     };
-};
-
-ActiveTable = ActiveTableGen();
+}());
