@@ -5,13 +5,18 @@ To add an ActiveTable problem to your edX course, follow these steps:
 1. Upload the files [`activetable.html`](activetable.html),
    [`activetable.css`](activetable.css) and [`activetable.js`](activetable.js)
    to your course assets using the ["Content > Files & Uploads" menu option in
-   edX Studio][upload file].  These files don't need to be customised to
-   individual problems.  If you want to customise them for some reason, make
-   sure to give the customised versions problem-specific names.
+   edX Studio][upload file]. You can use the "Download ZIP" button on the right
+   to download the files to your local file system.  After unzipping the
+   archive, you can upload the files to edX Studio.
+
+   These files don't need to be customised to individual problems.  If you want
+   to customise them for some reason, make sure to give the customised versions
+   problem-specific names.  Colours and font sizes can be customised by editing
+   `activetable.css`.
 
    [upload file]: http://edx.readthedocs.org/projects/edx-partner-course-staff/en/latest/building_course/course_files.html#upload-a-file
 
-1. [Add a "Custom JavaScript Display and Grading Problem"][add jsinput] to the
+1. [Add a "Custom JavaScript Display and Grading"][add jsinput] problem to the
    desired unit in your course.  Click EDIT at the top of the component and
    replace the text in the editor with the raw content of
    [`activetable.xml`](activetable.xml).  (This file shouldn't be uploaded to
