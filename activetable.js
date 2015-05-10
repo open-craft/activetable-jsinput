@@ -76,6 +76,7 @@ var ActiveTable = (function () {
                     $cell = $('<th>');
                 } else {
                     $cell = $('<td>');
+                    $cell.attr('id', 'cell_' + i + '_' + j);
                 }
                 if (typeof cell_state === 'object') {
                     if (cell_state.hasOwnProperty('correct')) {
