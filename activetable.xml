@@ -160,7 +160,8 @@ initial_state, height = init(table)
   to "True" in the settings, even when the problem does not involve any
   randomization.  This will ensure that students can correctly reload a changed
   version of a problem they've already worked on after a member of staff edited
-  the problem.
+  the problem.  You can change the problem settings by clicking EDIT above, then
+  SETTINGS in the top right corner of the edit window.
 </p>
 <p>
   Fill in the yellow fields with the right values.
