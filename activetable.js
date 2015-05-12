@@ -1,5 +1,5 @@
 var ActiveTable = (function () {
-    var  NUMERIC, STRING, check_response;
+    var  NUMERIC, STRING, check_response, placeholder;
 
     // Input type values must match the type values in the Python code.
     NUMERIC = 1;
@@ -17,6 +17,7 @@ var ActiveTable = (function () {
         return student_response == self.answer;
     };
 
+    // Placeholder strings for the different input types
     placeholder = {}
     placeholder[NUMERIC] = 'number'
     placeholder[STRING] = 'answer'
@@ -62,50 +63,58 @@ var ActiveTable = (function () {
         // state exported by the Python code and for setting the background
         // colour of input fields based on the correctness information stored
         // by the grader.
-        var row_state, $row, cell_state, $cell, $input;
-        state = JSON.parse(state);
-        for (var i = 0; i < state.length; i++) {
-            row_state = state[i];
-            $row = $('<tr>');
-            if (i % 2 === 0) {
-                $row.addClass('odd');
+
+        // Classes used on cells that contain input fields, based on their
+        // correctness.
+        var cell_classes = {}, $row;
+        cell_classes[undefined] = 'active';
+        cell_classes[true] = 'right-answer';
+        cell_classes[false] = 'wrong-answer';
+
+        function makeHeadRow(row_state) {
+            // Generate and return the title row of the table
+            var $row = $('<tr>');
+            for (var j = 0; j < row_state.length; j++) {
+                $row.append($('<th>').text(row_state[j]));
             }
+            return $row;
+        }
+
+        function makeInput(cell_state) {
+            return $('<input/>', {
+                type: 'text',
+                value: cell_state.value,
+                placeholder: placeholder[cell_state.type],
+                size: '10',
+            }).data(cell_state);
+        }
+
+        function makeRow(row_state) {
+            var $row, cell_state, $cell;
+            $row = $('<tr>');
             for (var j = 0; j < row_state.length; j++) {
                 cell_state = row_state[j];
-                if (i === 0) {
-                    $cell = $('<th>');
-                } else {
-                    $cell = $('<td>');
-                    $cell.attr('id', 'cell_' + i + '_' + j);
-                }
+                $cell = $('<td>');
+                $cell.attr('id', 'cell_' + i + '_' + j);
                 if (typeof cell_state === 'object') {
-                    if (cell_state.hasOwnProperty('correct')) {
-                        if (cell_state.correct) {
-                            $cell.addClass('right-answer');
-                        } else {
-                            $cell.addClass('wrong-answer');
-                        }
-                    } else {
-                        $cell.addClass('active');
-                    }
-                    $input = $('<input/>', {
-                        type: 'text',
-                        value: cell_state.value,
-                        placeholder: placeholder[cell_state.type],
-                        size: '10',
-                    });
-                    $input.data(cell_state);
-                    $cell.append($input);
+                    $cell.addClass(cell_classes[cell_state.correct]);
+                    $cell.append(makeInput(cell_state));
                 } else {
                     $cell.text(cell_state);
                 }
                 $row.append($cell);
             }
-            if (i === 0) {
-                $row.appendTo('#activeTable thead');
-            } else {
-                $row.appendTo('#activeTable tbody');
+            return $row;
+        }
+
+        state = JSON.parse(state);
+        makeHeadRow(state[0]).appendTo('#activeTable thead');
+        for (var i = 1; i < state.length; i++) {
+            $row = makeRow(state[i]);
+            if (i % 2 === 0) {
+                $row.addClass('odd');
             }
+            $row.appendTo('#activeTable tbody');
         }
     }
 

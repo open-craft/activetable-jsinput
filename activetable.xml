@@ -5,7 +5,6 @@
 # first portion of the code and can jump to "Problem definition" near the end.
 
 import json
-import re
 
 class ResponseCell(object):
     """Abstract base class for response cells."""
