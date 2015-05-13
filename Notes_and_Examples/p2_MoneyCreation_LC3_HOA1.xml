@@ -1,0 +1,185 @@
+<problem>
+<script type="loncapa/python">
+<![CDATA[
+# This Python code defines and evaluates the problem. You usually don't need to touch the
+# first portion of the code and can jump to "Problem definition" near the end.
+
+import json
+
+class ResponseCell(object):
+    """Abstract base class for response cells."""
+
+    TYPE = 0
+
+    def get_state(self):
+        """Return a dictionary describing the instance for sending to the JS code."""
+        d = vars(self).copy()
+        d.update(type=self.TYPE)
+        return d
+
+
+class Numeric(ResponseCell):
+    """A numeric response cell."""
+
+    TYPE = 1
+
+    def __init__(self, answer, tolerance=None):
+        """Set the correct answer and the allowed relative tolerance in percent."""
+        self.answer = answer
+        if tolerance is None:
+            tolerance = default_tolerance
+        self.abs_tolerance = abs(answer) * tolerance / 100.0
+
+    def check_response(self, student_response):
+        """Return a Boolean value indicating whether the student response is correct."""
+        try:
+            r = float(student_response)
+        except ValueError:
+            return False
+        return abs(r - self.answer) <= self.abs_tolerance
+
+
+class String(ResponseCell):
+    """A string response cell."""
+
+    TYPE = 2
+
+    def __init__(self, answer):
+        """Set the correct answer."""
+        self.answer = answer
+
+    def check_response(self, student_response):
+        """Return a Boolean value indicating whether the student response is correct."""
+        return student_response == self.answer
+
+
+def init(table):
+    """Initialisation code for values exported to the XML code.
+
+    The initial_state is a JSON string exported to the JavaScript code and used to construct
+    the table.  The height is the height of the iframe in pixels.
+    """
+    data = [
+        [cell.get_state() if isinstance(cell, ResponseCell) else str(cell) for cell in row]
+        for row in table
+    ]
+    # Curiously, the JSON string must be doubly HTML-escaped.
+    initial_state = json.dumps(data).replace('&', '&amp;amp;').replace('"', '&amp;quot;')
+    height = 38 * len(table)  # Includes a bit of safety margin to avoid ugly scrollbars.
+    return initial_state, height
+
+
+def check_consistency(state):
+    """Check whether the state of the table is consistent with the initial state.
+
+    If not, the problem was edited in the mean time, and we ask the student to click
+    the reset button (as we can't initiate resetting the problem from code).
+    """
+    if len(table) != len(state):
+        return False
+    for row, row_state in zip(table, state):
+        if len(row) != len(row_state):
+            return False
+        for cell, cell_state in zip(row, row_state):
+            if isinstance(cell, ResponseCell):
+                if not isinstance(cell_state, dict):
+                    return False
+                orig_state = cell.get_state()
+                if not all(orig_state[k] == cell_state[k] for k in orig_state):
+                    return False
+            else:
+                if not str(cell) == cell_state:
+                    return False
+    return True
+
+
+def check_table(unused_expect, ans):
+    """Determine the correctness of all student responses.
+
+    The correctness is independently determined by the JavaScript code on the client side.
+    """
+    ans = json.loads(ans)
+    state = json.loads(ans['state'])
+
+    if not check_consistency(state):
+        return {
+            'ok': False,
+            'msg': 'The problem was edited by the course staff since the last time you '
+            'worked on it.  Please click the "Reset" button to get the latest version.'
+        }
+
+    correct_answers = total_questions = 0
+    for row, row_state in zip(table, state):
+        for cell, cell_state in zip(row, row_state):
+            if isinstance(cell, ResponseCell):
+                total_questions += 1
+                correct_answers += cell.check_response(cell_state['value'])
+
+    if correct_answers == total_questions:
+        return {'ok': True, 'msg': 'Great job!'}
+    else:
+        return {
+            'ok': False,
+            'msg': 'You have {} cells out of {} correct.'.format(correct_answers, total_questions)
+        }
+
+## Problem definition ##
+## Edit the table and settings below. ##
+
+# The default tolerance in percent, used for all numeric fields that don't specify an ecplicit
+# tolerance.
+default_tolerance = 1.0
+
+# The table itself.  The first row contains the column headers.  Any cell in the following rows can
+# be either a string or number, which will simply be shown to the student, or one of the special
+# cell types Numeric() or String(), indicating a numeric or string input field that must be filled
+# in by the student.
+# Syntax of the special cell types:
+#     Numeric(answer=<correct_answer>, tolerance=<tolerance in percent>)
+#     String(answer='<correct answer>')
+table = [
+    ['RR', 'Immediate $ Change in Demand Deposits', 'Immediate $ Change to Required Reserves', 'Immediate $ Change to Excess Reserves', 
+        'Maximum Money Multiplier', 'Total Change in Demand Deposits', 'Total Change in the Money Supply'],
+    
+    ['10%', Numeric(answer=0.0, tolerance=0.1), Numeric(answer=0.0, tolerance=0.1), Numeric(answer=10000.0, tolerance=1.0),
+        Numeric(answer=10.0, tolerance=0.1), Numeric(answer=10000.0, tolerance=1.0), Numeric(answer=10000.0, tolerance=1.0)],
+    
+    ['20%', Numeric(answer=0.0, tolerance=0.1), Numeric(answer=0.0, tolerance=0.1), Numeric(answer=10000.0, tolerance=1.0),
+        Numeric(answer=5.0, tolerance=0.1), Numeric(answer=5000.0, tolerance=1.0), Numeric(answer=5000.0, tolerance=1.0)],
+]
+
+# Initialisation -- don't remove!
+initial_state, height = init(table)
+
+]]>
+</script>
+<p>
+  Assume the central bank, the Federal Reserve, purchases a $10,000 government bond from a bank. The reserve requirement is 10 percent in the first example and 20 percent in the second example. Complete the active table below. 
+</p>
+<p>
+  It is recommended to set "Randomization" to "On Reset" and "Show Reset Button"
+  to "True" in the settings, even when the problem does not involve any
+  randomization.  This will ensure that students can correctly reload a changed
+  version of a problem they've already worked on after a member of staff edited
+  the problem.  You can change the problem settings by clicking EDIT above, then
+  SETTINGS in the top right corner of the edit window.
+</p>
+<p>
+  Fill in the yellow fields with the right values.
+</p>
+<customresponse cfn="check_table">
+  <jsinput gradefn="ActiveTable.grade"
+    get_statefn="ActiveTable.getState"
+    set_statefn="ActiveTable.setState"
+    initial_state="$initial_state"
+    width="800"
+    height="$height"
+    html_file="/static/activetable.html"
+    sop="true"/>
+</customresponse>
+<solution>
+  <p>
+    Delta_v is computed as v_final – v_initial.
+  </p>
+</solution>
+</problem>
