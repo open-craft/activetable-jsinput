@@ -8,7 +8,6 @@ table {
     color: #3c3c3c;
     background-color: #ffffff;
     font: normal 1em/1.6em "Open Sans",Verdana,Geneva,sans-serif,sans-serif;
-    border: 1px solid #c0c0c0;
     border-collapse: collapse;
 }
 tr {
@@ -22,7 +21,7 @@ tr.odd {
 }
 th, td {
     padding: 5px 10px;
-    border-width: 0;
+    border: 1px solid #c0c0c0;
 }
 th {
     text-align: left;
@@ -54,5 +53,5 @@ input[type="text"] {
     border: 0;
     padding: 0 10px;
     margin: 0;
-    background-color: rgba(0, 0, 0, 0);
+    background-color: transparent;
 }
