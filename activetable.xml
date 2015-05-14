@@ -138,11 +138,10 @@ default_tolerance = 1.0
 #     Numeric(answer=<correct_answer>, tolerance=<tolerance in percent>)
 #     String(answer='<correct answer>')
 table = [
-    ['Carts', 'v_initial', 'v_final', 'Delta v'],
-    ['green', 2.0, -1.2, Numeric(answer=-3.2, tolerance=2.0)],
-    ['red', -2.0, 1.2, Numeric(answer=3.2)],
-    ['yellow', -1.4, 0.0, Numeric(answer=1.4)],
-    ['purple', 3.4, 2.1, Numeric(answer=-1.3)],
+    ['Spring #', 'Reading', 'Angle from 0 degrees'],
+    ['1', 10.0, 0],
+    ['2', Numeric(answer=8.0, tolerance=0.1), Numeric(answer=144.0, tolerance=0.5)],
+    ['3', Numeric(answer=6.0, tolerance=0.1), Numeric(answer=233.0, tolerance=0.5)],
 ]
 
 # Initialisation -- don't remove!
