@@ -67,7 +67,7 @@ var ActiveTable = (function () {
         // Classes used on cells that contain input fields, based on their
         // correctness.
         var cell_classes = {}, $row;
-        cell_classes[undefined] = 'active';
+        cell_classes[undefined] = 'unchecked';
         cell_classes[true] = 'right-answer';
         cell_classes[false] = 'wrong-answer';
 
@@ -85,7 +85,11 @@ var ActiveTable = (function () {
                 type: 'text',
                 value: cell_state.value,
                 placeholder: placeholder[cell_state.type],
-                size: '10',
+                // The input will always fill the whole width of the table cell,
+                // but some browsers will use the size value as a minimum, and
+                // assume a default if you don't set the size, so we have to set
+                // it to a small value.
+                size: '1',
             }).data(cell_state);
         }
 
@@ -97,6 +101,7 @@ var ActiveTable = (function () {
                 $cell = $('<td>');
                 $cell.attr('id', 'cell_' + i + '_' + j);
                 if (typeof cell_state === 'object') {
+                    $cell.addClass('active');
                     $cell.addClass(cell_classes[cell_state.correct]);
                     $cell.append(makeInput(cell_state));
                 } else {

@@ -20,6 +20,7 @@ tr.odd {
     background-color: #f0f0f0;
 }
 th, td {
+    line-height: 1.5em;
     padding: 5px 10px;
     border: 1px solid #c0c0c0;
 }
@@ -29,9 +30,13 @@ th {
 }
 /* cells that allow user input */
 td.active {
+    padding: 0;
+}
+/* Cells that haven't been checked yet */
+td.unchecked {
     background-color: #ffffe0;
 }
-tr.odd td.active {
+tr.odd td.unchecked {
     background-color: #f0f0d0;
 }
 /* cells containing wrong answers after clicking "Check" */
@@ -50,8 +55,19 @@ tr.odd td.right-answer {
 }
 input[type="text"] {
     font-size: 1em;
+    line-height: 1.5em;
     border: 0;
-    padding: 0 10px;
+    padding: 5px 10px;
     margin: 0;
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    height: 100%;
     background-color: transparent;
+}
+input[type="text"]:hover {
+    outline: 2px solid #a0a0ff;
+}
+input[type="text"]:focus {
+    outline: 2px solid #8080ff;
 }
