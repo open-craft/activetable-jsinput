@@ -149,27 +149,9 @@ initial_state, height = init(table)
 
 ]]>
 </script>
-  
-  <img src="/static/IMG_4.1.2_2_0.jpg"/>
-<p>Problem Text: Based on the provided image, fill in the blanks in the table with what you think are the most appropriate values.
+  <img src="/static/IMG_4.1.2_2_1_new.jpg"/>
+  <p>Problem Text: Based on the provided image, fill in the blanks in the table with what you think are the most appropriate values.
   </p>
-  
- <p>
-  This is an ActiveTable problem, allowing you to place input fields in the cell
-  of a table.  You can edit the table and declare the cells that are input cells
-  by clicking EDIT above and following the instructions in the Python code.
-</p>
-<p>
-  It is recommended to set "Randomization" to "On Reset" and "Show Reset Button"
-  to "True" in the settings, even when the problem does not involve any
-  randomization.  This will ensure that students can correctly reload a changed
-  version of a problem they've already worked on after a member of staff edited
-  the problem.  You can change the problem settings by clicking EDIT above, then
-  SETTINGS in the top right corner of the edit window.
-</p>
-<p>
-  Fill in the yellow fields with the right values.
-</p>
 <customresponse cfn="check_table">
   <jsinput gradefn="ActiveTable.grade"
     get_statefn="ActiveTable.getState"
@@ -180,9 +162,4 @@ initial_state, height = init(table)
     html_file="/static/activetable.html"
     sop="true"/>
 </customresponse>
-<solution>
-  <p>
-    Delta_v is computed as v_final – v_initial.
-  </p>
-</solution>
 </problem>

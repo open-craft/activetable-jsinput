@@ -128,7 +128,7 @@ def check_table(unused_expect, ans):
 
 # The default tolerance in percent, used for all numeric fields that don't specify an ecplicit
 # tolerance.
-default_tolerance = 1.0
+default_tolerance = 0.1
 
 # The table itself.  The first row contains the column headers.  Any cell in the following rows can
 # be either a string or number, which will simply be shown to the student, or one of the special
@@ -139,8 +139,8 @@ default_tolerance = 1.0
 #     String(answer='<correct answer>')
 table = [
     ['x','0.900','0.995','0.999','1.000','1.001','1.005','1.10'],
-    ['f(x)',Numeric(answer=0.70, tolerance=0.1),Numeric(answer=0.67, tolerance=0.1),Numeric(answer=0.66, tolerance=0.1),
-            'infinity',Numeric(answer=0.66, tolerance=0.1),Numeric(answer=0.66, tolerance=0.1),Numeric(answer=0.63, tolerance=0.1)],
+    ['f(x)',Numeric(answer=0.70),Numeric(answer=0.67),Numeric(answer=0.66),
+     'infinity',Numeric(answer=0.66),Numeric(answer=0.66),Numeric(answer=0.63)],
 ]
 
 # Initialisation -- don't remove!
@@ -150,22 +150,6 @@ initial_state, height = init(table)
 </script>  
 <p>Fill in the table, and guess the value of the limit of the given \(f(x)\) as \(x\) approaches 1.</p>
 <p>\(\lim\limits_{x\rightarrow1}\frac{x^2-1}{x^3-1}=\)?</p>
- <p>
-  This is an ActiveTable problem, allowing you to place input fields in the cell
-  of a table.  You can edit the table and declare the cells that are input cells
-  by clicking EDIT above and following the instructions in the Python code.
-</p>
-<p>
-  It is recommended to set "Randomization" to "On Reset" and "Show Reset Button"
-  to "True" in the settings, even when the problem does not involve any
-  randomization.  This will ensure that students can correctly reload a changed
-  version of a problem they've already worked on after a member of staff edited
-  the problem.  You can change the problem settings by clicking EDIT above, then
-  SETTINGS in the top right corner of the edit window.
-</p>
-<p>
-  Fill in the yellow fields with the right values.
-</p>
 <customresponse cfn="check_table">
   <jsinput gradefn="ActiveTable.grade"
     get_statefn="ActiveTable.getState"
@@ -176,9 +160,4 @@ initial_state, height = init(table)
     html_file="/static/activetable.html"
     sop="true"/>
 </customresponse>
-<solution>
-  <p>
-    Delta_v is computed as v_final – v_initial.
-  </p>
-</solution>
 </problem>
