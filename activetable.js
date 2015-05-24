@@ -39,6 +39,7 @@ var ActiveTable = (function () {
         // complete problem description and the values entered by the student.
         var
             state = [],
+            help_text = $('#help-text').text() || null;
             column_widths = [],
             row_height = parseInt($('tr').css('height'));
 
@@ -66,6 +67,7 @@ var ActiveTable = (function () {
         $('#activeTable colgroup col').each(appendCol);
         return JSON.stringify({
             data: state,
+            help_text: help_text,
             column_widths: column_widths,
             row_height: row_height,
         });
@@ -126,6 +128,18 @@ var ActiveTable = (function () {
             return $row;
         }
 
+        function makeHelp(help_text) {
+            var help_active = false;
+            if (!help_text) return;
+            $('#help-text').text(help_text);
+            $('#help-button').click(function(e) {
+                $('#help-text').toggle();
+                help_active = !help_active;
+                $(this).text(help_active ? '-help' : '+help');
+            });
+            $('#help').show();  // Show the div with the button, not the text.
+        }
+
         function makeColGroup(num_cols, column_widths) {
             var w;
             for (var i = 0; i < num_cols; i++) {
@@ -150,6 +164,7 @@ var ActiveTable = (function () {
             }
             $row.appendTo('#activeTable tbody');
         }
+        makeHelp(state.help_text);
         makeColGroup(state.data[0].length, state.column_widths);
         setRowHeight(state.row_height);
     }

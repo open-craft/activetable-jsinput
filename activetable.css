@@ -1,13 +1,14 @@
 body {
     padding: 0;
     margin: 0;
-}
-table {
-    padding: 0;
-    margin: 0;
+    font: normal 1em/1.6em "Open Sans",Verdana,Geneva,sans-serif,sans-serif;
     color: #3c3c3c;
     background-color: #ffffff;
-    font: normal 1em/1.6em "Open Sans",Verdana,Geneva,sans-serif,sans-serif;
+}
+table {
+    clear: both;
+    padding: 0;
+    margin: 0;
     border-collapse: collapse;
 }
 tr {
@@ -69,4 +70,23 @@ input[type="text"]:hover {
 }
 input[type="text"]:focus {
     outline: 2px solid #8080ff;
+}
+#help {
+    display: none;
+}
+#help-text {
+    display: none;
+    padding: 5px 10px;
+    margin: 0 0 10px;
+    border: 1px solid #c0c0c0;
+    background-color: #f0f0f0;
+}
+#help-button {
+    float: right;
+    padding: 6px 10px 0;
+    color: #009fe6;
+    cursor: pointer;
+}
+#help-button:hover {
+    color: #bd9730;
 }
