@@ -19,8 +19,8 @@ var ActiveTable = (function () {
 
     // Placeholder strings for the different input types
     placeholder = {};
-    placeholder[NUMERIC] = 'number'
-    placeholder[STRING] = 'answer'
+    placeholder[NUMERIC] = 'numeric response'
+    placeholder[STRING] = 'text response'
 
     function grade(state) {
         // This function attaches correctness information to each input field.
