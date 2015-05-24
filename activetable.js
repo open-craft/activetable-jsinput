@@ -18,7 +18,7 @@ var ActiveTable = (function () {
     };
 
     // Placeholder strings for the different input types
-    placeholder = {}
+    placeholder = {};
     placeholder[NUMERIC] = 'number'
     placeholder[STRING] = 'answer'
 
@@ -37,7 +37,11 @@ var ActiveTable = (function () {
     function getState() {
         // Extract the current state of the table.  The state includes the
         // complete problem description and the values entered by the student.
-        var state = [];
+        var
+            state = [],
+            column_widths = [],
+            row_height = parseInt($('tr').css('height'));
+
         function appendRow() {
             var row_state = [];
             $(this).children().each(function() {
@@ -45,16 +49,26 @@ var ActiveTable = (function () {
                 if (typeof $input[0] === 'undefined') {
                     row_state.push($cell.text());
                 } else {
-                    data = $input.data()
+                    data = $input.data();
                     data.value = $('input', this)[0].value;
                     row_state.push(data);
                 }
             });
             state.push(row_state);
         }
+
+        function appendCol() {
+            column_widths.push(parseInt($(this).css('width')));
+        }
+
         $('#activeTable thead tr').each(appendRow);
         $('#activeTable tbody tr').each(appendRow);
-        return JSON.stringify(state);
+        $('#activeTable colgroup col').each(appendCol);
+        return JSON.stringify({
+            data: state,
+            column_widths: column_widths,
+            row_height: row_height,
+        });
     }
 
     function setState(state) {
@@ -112,15 +126,32 @@ var ActiveTable = (function () {
             return $row;
         }
 
+        function makeColGroup(num_cols, column_widths) {
+            var w;
+            for (var i = 0; i < num_cols; i++) {
+                w = column_widths !== null ? column_widths[i] : 800 / num_cols;
+                $('<col>').css('width', w).appendTo('#activeTable colgroup');
+            }
+        }
+
+        function setRowHeight(row_height) {
+            $('#row-height-style').text(
+                'tr { height: ' + row_height + 'px; }\n' +
+                'input { height: ' + (row_height - 2) + 'px; }\n'
+            );
+        }
+
         state = JSON.parse(state);
-        makeHeadRow(state[0]).appendTo('#activeTable thead');
-        for (var i = 1; i < state.length; i++) {
-            $row = makeRow(state[i]);
+        makeHeadRow(state.data[0]).appendTo('#activeTable thead');
+        for (var i = 1; i < state.data.length; i++) {
+            $row = makeRow(state.data[i]);
             if (i % 2 === 0) {
                 $row.addClass('odd');
             }
             $row.appendTo('#activeTable tbody');
         }
+        makeColGroup(state.data[0].length, state.column_widths);
+        setRowHeight(state.row_height);
     }
 
     return {
