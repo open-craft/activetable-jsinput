@@ -18,9 +18,9 @@ var ActiveTable = (function () {
     };
 
     // Placeholder strings for the different input types
-    placeholder = {}
-    placeholder[NUMERIC] = 'number'
-    placeholder[STRING] = 'answer'
+    placeholder = {};
+    placeholder[NUMERIC] = 'numeric response'
+    placeholder[STRING] = 'text response'
 
     function grade(state) {
         // This function attaches correctness information to each input field.
@@ -37,7 +37,12 @@ var ActiveTable = (function () {
     function getState() {
         // Extract the current state of the table.  The state includes the
         // complete problem description and the values entered by the student.
-        var state = [];
+        var
+            state = [],
+            help_text = $('#help-text').text() || null;
+            column_widths = [],
+            row_height = parseInt($('tr').css('height'));
+
         function appendRow() {
             var row_state = [];
             $(this).children().each(function() {
@@ -45,16 +50,27 @@ var ActiveTable = (function () {
                 if (typeof $input[0] === 'undefined') {
                     row_state.push($cell.text());
                 } else {
-                    data = $input.data()
+                    data = $input.data();
                     data.value = $('input', this)[0].value;
                     row_state.push(data);
                 }
             });
             state.push(row_state);
         }
+
+        function appendCol() {
+            column_widths.push(parseInt($(this).css('width')));
+        }
+
         $('#activeTable thead tr').each(appendRow);
         $('#activeTable tbody tr').each(appendRow);
-        return JSON.stringify(state);
+        $('#activeTable colgroup col').each(appendCol);
+        return JSON.stringify({
+            data: state,
+            help_text: help_text,
+            column_widths: column_widths,
+            row_height: row_height,
+        });
     }
 
     function setState(state) {
@@ -67,7 +83,7 @@ var ActiveTable = (function () {
         // Classes used on cells that contain input fields, based on their
         // correctness.
         var cell_classes = {}, $row;
-        cell_classes[undefined] = 'active';
+        cell_classes[undefined] = 'unchecked';
         cell_classes[true] = 'right-answer';
         cell_classes[false] = 'wrong-answer';
 
@@ -85,7 +101,11 @@ var ActiveTable = (function () {
                 type: 'text',
                 value: cell_state.value,
                 placeholder: placeholder[cell_state.type],
-                size: '10',
+                // The input will always fill the whole width of the table cell,
+                // but some browsers will use the size value as a minimum, and
+                // assume a default if you don't set the size, so we have to set
+                // it to a small value.
+                size: '1',
             }).data(cell_state);
         }
 
@@ -97,6 +117,7 @@ var ActiveTable = (function () {
                 $cell = $('<td>');
                 $cell.attr('id', 'cell_' + i + '_' + j);
                 if (typeof cell_state === 'object') {
+                    $cell.addClass('active');
                     $cell.addClass(cell_classes[cell_state.correct]);
                     $cell.append(makeInput(cell_state));
                 } else {
@@ -107,15 +128,45 @@ var ActiveTable = (function () {
             return $row;
         }
 
+        function makeHelp(help_text) {
+            var help_active = false;
+            if (!help_text) return;
+            $('#help-text').text(help_text);
+            $('#help-button').click(function(e) {
+                $('#help-text').toggle();
+                help_active = !help_active;
+                $(this).text(help_active ? '-help' : '+help');
+            });
+            $('#help').show();  // Show the div with the button, not the text.
+        }
+
+        function makeColGroup(num_cols, column_widths) {
+            var w;
+            for (var i = 0; i < num_cols; i++) {
+                w = column_widths !== null ? column_widths[i] : 800 / num_cols;
+                $('<col>').css('width', w).appendTo('#activeTable colgroup');
+            }
+        }
+
+        function setRowHeight(row_height) {
+            $('#row-height-style').text(
+                'tr { height: ' + row_height + 'px; }\n' +
+                'input { height: ' + (row_height - 2) + 'px; }\n'
+            );
+        }
+
         state = JSON.parse(state);
-        makeHeadRow(state[0]).appendTo('#activeTable thead');
-        for (var i = 1; i < state.length; i++) {
-            $row = makeRow(state[i]);
+        makeHeadRow(state.data[0]).appendTo('#activeTable thead');
+        for (var i = 1; i < state.data.length; i++) {
+            $row = makeRow(state.data[i]);
             if (i % 2 === 0) {
                 $row.addClass('odd');
             }
             $row.appendTo('#activeTable tbody');
         }
+        makeHelp(state.help_text);
+        makeColGroup(state.data[0].length, state.column_widths);
+        setRowHeight(state.row_height);
     }
 
     return {
