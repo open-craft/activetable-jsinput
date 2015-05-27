@@ -5,12 +5,35 @@ var ActiveTable = (function () {
     NUMERIC = 1;
     STRING = 2;
 
+    // Helper function to determine the number of significant digits in a
+    // floating point literal.  Significant digits are counted from the first
+    // non-zero digit specified, but include trailing zeros.  The string s is
+    // assumed to be a valid floating-point literal and is not validated.
+    function significant_digits(s) {
+        // Regular expression to capture the digits before and after the decimal
+        // point, but not the digits in the exponent.
+        var re = /([0-9]*)\.([0-9]+)|([0-9]+)/;
+        // All specified digits without the decimal point and the exponent.
+        var all_digits = re.exec(s).slice(1).join('');
+        // The number of digits with leading zero digits removed.
+        return all_digits.replace(/^0+/, '').length;
+    }
+
     // Correctness checks for numeric and string inputs.  These functions are
     // reimplementations of the corresponding functions in the Python code.
     check_response = {};
     check_response[NUMERIC] = function(self, student_response) {
-        var r = parseFloat(student_response);
+        var r = parseFloat(student_response), d;
         if (isNaN(r)) return false;
+        if (self.min_significant_digits || self.max_significant_digits) {
+            d = significant_digits(student_response);
+            if (self.min_significant_digits && d < self.min_significant_digits) {
+                return false;
+            }
+            if (self.max_significant_digits && d > self.max_significant_digits) {
+                return false;
+            }
+        }
         return Math.abs(r - self.answer) <= self.abs_tolerance;
     };
     check_response[STRING] = function(self, student_response) {
