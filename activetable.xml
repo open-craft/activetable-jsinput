@@ -171,7 +171,7 @@ column_widths = None
 #column_widths = [150, 150, 150, 150]
 
 # The height of a table row in pixels.  Rows may grow higher than the specified value if the text
-# in some cells in the row is long enough to get wrapped in more than more lines.  If this happens,
+# in some cells in the row is long enough to get wrapped in more than one line.  If this happens,
 # you might need to replace "$height" close to the end of this file by a big enough value to
 # prevent a vertical scrollbar for the iframe from appearing.
 row_height = 36
