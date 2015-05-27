@@ -28,8 +28,8 @@ var ActiveTable = (function () {
         // function embedded in XML determines correctness independently of this
         // function.
         $('#activeTable input').each(function() {
-            var $input = $(this), data = $input.data();
-            $input.data('correct', check_response[data.type](data, this.value));
+            var $input = $(this), cell_data = $input.data();
+            $input.data('correct', check_response[cell_data.type](cell_data, this.value));
         });
         return state;
     }
@@ -38,7 +38,7 @@ var ActiveTable = (function () {
         // Extract the current state of the table.  The state includes the
         // complete problem description and the values entered by the student.
         var
-            state = [],
+            data = [],
             help_text = $('#help-text').text() || null;
             column_widths = [],
             row_height = parseInt($('tr').css('height'));
@@ -46,16 +46,16 @@ var ActiveTable = (function () {
         function appendRow() {
             var row_state = [];
             $(this).children().each(function() {
-                var $cell = $(this), $input = $('input', this), data;
+                var $cell = $(this), $input = $('input', this), cell_data;
                 if (typeof $input[0] === 'undefined') {
                     row_state.push($cell.text());
                 } else {
-                    data = $input.data();
-                    data.value = $('input', this)[0].value;
-                    row_state.push(data);
+                    cell_data = $input.data();
+                    cell_data.value = $('input', this)[0].value;
+                    row_state.push(cell_data);
                 }
             });
-            state.push(row_state);
+            data.push(row_state);
         }
 
         function appendCol() {
@@ -66,7 +66,7 @@ var ActiveTable = (function () {
         $('#activeTable tbody tr').each(appendRow);
         $('#activeTable colgroup col').each(appendCol);
         return JSON.stringify({
-            data: state,
+            data: data,
             help_text: help_text,
             column_widths: column_widths,
             row_height: row_height,
