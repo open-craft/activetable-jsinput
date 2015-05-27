@@ -37,7 +37,7 @@ class String(ResponseCell):
     def check_response(self, student_response):
         """Return a Boolean value indicating whether the student response is correct."""
         return student_response == self.answer
-def init(table):
+def init(table, help_text, column_widths, row_height):
     """Initialisation code for values exported to the XML code.
     The initial_state is a JSON string exported to the JavaScript code and used to construct
     the table.  The height is the height of the iframe in pixels.
@@ -46,18 +46,32 @@ def init(table):
         [cell.get_state() if isinstance(cell, ResponseCell) else str(cell) for cell in row]
         for row in table
     ]
+    initial_state = dict(
+        data=data,
+        help_text=help_text,
+        column_widths=column_widths,
+        row_height=row_height,
+    )
     # Curiously, the JSON string must be doubly HTML-escaped.
-    initial_state = json.dumps(data).replace('&', '&amp;amp;').replace('"', '&amp;quot;')
-    height = 38 * len(table)  # Includes a bit of safety margin to avoid ugly scrollbars.
-    return initial_state, height
+    initial_state = json.dumps(initial_state).replace('&', '&amp;amp;').replace('"', '&amp;quot;')
+    # All heights and widths include a bit of safety margin to avoid scrollbars and rendering
+    # artifacts on some browsers.
+    if column_widths is not None:
+        width = sum(column_widths) + 2
+    else:
+        width = 800 + 2
+    height = (row_height + 1) * len(table)
+    if help_text:
+        height += (len(help_text) // 100 + 2) * 26
+    return initial_state, width, height
 def check_consistency(state):
     """Check whether the state of the table is consistent with the initial state.
     If not, the problem was edited in the mean time, and we ask the student to click
     the reset button (as we can't initiate resetting the problem from code).
     """
-    if len(table) != len(state):
+    if len(table) != len(state['data']):
         return False
-    for row, row_state in zip(table, state):
+    for row, row_state in zip(table, state['data']):
         if len(row) != len(row_state):
             return False
         for cell, cell_state in zip(row, row_state):
@@ -84,7 +98,7 @@ def check_table(unused_expect, ans):
             'worked on it.  Please click the "Reset" button to get the latest version.'
         }
     correct_answers = total_questions = 0
-    for row, row_state in zip(table, state):
+    for row, row_state in zip(table, state['data']):
         for cell, cell_state in zip(row, row_state):
             if isinstance(cell, ResponseCell):
                 total_questions += 1
@@ -114,19 +128,35 @@ table = [
     ['2', Numeric(answer=8.0, tolerance=0.1), Numeric(answer=144.0, tolerance=0.5)],
     ['3', Numeric(answer=6.0, tolerance=0.1), Numeric(answer=233.0, tolerance=0.5)],
 ]
+# Set the text that gets displayed when clicking the "+help" button.  Use "None" to disable the
+# help feature.
+#help_text = None
+help_text = "Fill in the yellow fields with the right values."
+# Set the width of the columns in pixels.  The total width of the table shouldn't be more than 800.
+# You can use "column_width = None" for equal-width columns with a total width of 800 pixels.
+column_widths = None
+#column_widths = [150, 150, 150, 150]
+# The height of a table row in pixels.  Rows may grow higher than the specified value if the text
+# in some cells in the row is long enough to get wrapped in more than more lines.  If this happens,
+# you might need to replace "$height" close to the end of this file by a big enough value to
+# prevent a vertical scrollbar for the iframe from appearing.
+row_height = 36
 # Initialisation -- don't remove!
-initial_state, height = init(table)
+initial_state, width, height = init(table, help_text, column_widths, row_height)
 ]]>
 </script>
   <img src="/static/IMG_4.1.2_2_1_new.jpg"/>
-  <p>Problem Text: Based on the provided image, fill in the blanks in the table with what you think are the most appropriate values.
+<p>Problem Text: Based on the provided image, fill in the blanks in the table with what you think are the most appropriate values.
   </p>
+<p>
+  Fill in the yellow fields with the right values.
+</p>
 <customresponse cfn="check_table">
   <jsinput gradefn="ActiveTable.grade"
     get_statefn="ActiveTable.getState"
     set_statefn="ActiveTable.setState"
     initial_state="$initial_state"
-    width="800"
+    width="$width"
     height="$height"
     html_file="/static/activetable.html"
     sop="true"/>
