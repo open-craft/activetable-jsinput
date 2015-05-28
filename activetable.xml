@@ -163,7 +163,7 @@ default_tolerance = 1.0
 # Syntax of the special cell types:
 #
 #     Numeric(answer=<correct_answer>, tolerance=<tolerance in percent>,
-#             min_siginificant_digits=<number>, max_significant_digits=<number>)
+#             min_significant_digits=<number>, max_significant_digits=<number>)
 #         The tolerance is optional, and will default to the default tolerance specified above.
 #         The restrictions for the number of significant digits are optional as well.  Significant
 #         digits are counted started from the first non-zero digit specified by the student, and
