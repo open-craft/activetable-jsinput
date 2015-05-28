@@ -5,12 +5,35 @@ var ActiveTable = (function () {
     NUMERIC = 1;
     STRING = 2;
 
+    // Helper function to determine the number of significant digits in a
+    // floating point literal.  Significant digits are counted from the first
+    // non-zero digit specified, but include trailing zeros.  The string s is
+    // assumed to be a valid floating-point literal and is not validated.
+    function significant_digits(s) {
+        // Regular expression to capture the digits before and after the decimal
+        // point, but not the digits in the exponent.
+        var re = /([0-9]*)\.([0-9]+)|([0-9]+)/;
+        // All specified digits without the decimal point and the exponent.
+        var all_digits = re.exec(s).slice(1).join('');
+        // The number of digits with leading zero digits removed.
+        return all_digits.replace(/^0+/, '').length;
+    }
+
     // Correctness checks for numeric and string inputs.  These functions are
     // reimplementations of the corresponding functions in the Python code.
     check_response = {};
     check_response[NUMERIC] = function(self, student_response) {
-        var r = parseFloat(student_response);
+        var r = parseFloat(student_response), d;
         if (isNaN(r)) return false;
+        if (self.min_significant_digits || self.max_significant_digits) {
+            d = significant_digits(student_response);
+            if (self.min_significant_digits && d < self.min_significant_digits) {
+                return false;
+            }
+            if (self.max_significant_digits && d > self.max_significant_digits) {
+                return false;
+            }
+        }
         return Math.abs(r - self.answer) <= self.abs_tolerance;
     };
     check_response[STRING] = function(self, student_response) {
@@ -18,9 +41,9 @@ var ActiveTable = (function () {
     };
 
     // Placeholder strings for the different input types
-    placeholder = {}
-    placeholder[NUMERIC] = 'number'
-    placeholder[STRING] = 'answer'
+    placeholder = {};
+    placeholder[NUMERIC] = 'numeric response'
+    placeholder[STRING] = 'text response'
 
     function grade(state) {
         // This function attaches correctness information to each input field.
@@ -28,8 +51,8 @@ var ActiveTable = (function () {
         // function embedded in XML determines correctness independently of this
         // function.
         $('#activeTable input').each(function() {
-            var $input = $(this), data = $input.data();
-            $input.data('correct', check_response[data.type](data, this.value));
+            var $input = $(this), cell_data = $input.data();
+            $input.data('correct', check_response[cell_data.type](cell_data, this.value));
         });
         return state;
     }
@@ -37,24 +60,40 @@ var ActiveTable = (function () {
     function getState() {
         // Extract the current state of the table.  The state includes the
         // complete problem description and the values entered by the student.
-        var state = [];
+        var
+            data = [],
+            help_text = $('#help-text').text() || null;
+            column_widths = [],
+            row_height = parseInt($('tr').css('height'));
+
         function appendRow() {
             var row_state = [];
             $(this).children().each(function() {
-                var $cell = $(this), $input = $('input', this), data;
+                var $cell = $(this), $input = $('input', this), cell_data;
                 if (typeof $input[0] === 'undefined') {
                     row_state.push($cell.text());
                 } else {
-                    data = $input.data()
-                    data.value = $('input', this)[0].value;
-                    row_state.push(data);
+                    cell_data = $input.data();
+                    cell_data.value = $('input', this)[0].value;
+                    row_state.push(cell_data);
                 }
             });
-            state.push(row_state);
+            data.push(row_state);
         }
+
+        function appendCol() {
+            column_widths.push(parseInt($(this).css('width')));
+        }
+
         $('#activeTable thead tr').each(appendRow);
         $('#activeTable tbody tr').each(appendRow);
-        return JSON.stringify(state);
+        $('#activeTable colgroup col').each(appendCol);
+        return JSON.stringify({
+            data: data,
+            help_text: help_text,
+            column_widths: column_widths,
+            row_height: row_height,
+        });
     }
 
     function setState(state) {
@@ -67,7 +106,7 @@ var ActiveTable = (function () {
         // Classes used on cells that contain input fields, based on their
         // correctness.
         var cell_classes = {}, $row;
-        cell_classes[undefined] = 'active';
+        cell_classes[undefined] = 'unchecked';
         cell_classes[true] = 'right-answer';
         cell_classes[false] = 'wrong-answer';
 
@@ -85,7 +124,11 @@ var ActiveTable = (function () {
                 type: 'text',
                 value: cell_state.value,
                 placeholder: placeholder[cell_state.type],
-                size: '10',
+                // The input will always fill the whole width of the table cell,
+                // but some browsers will use the size value as a minimum, and
+                // assume a default if you don't set the size, so we have to set
+                // it to a small value.
+                size: '1',
             }).data(cell_state);
         }
 
@@ -97,6 +140,7 @@ var ActiveTable = (function () {
                 $cell = $('<td>');
                 $cell.attr('id', 'cell_' + i + '_' + j);
                 if (typeof cell_state === 'object') {
+                    $cell.addClass('active');
                     $cell.addClass(cell_classes[cell_state.correct]);
                     $cell.append(makeInput(cell_state));
                 } else {
@@ -107,15 +151,45 @@ var ActiveTable = (function () {
             return $row;
         }
 
+        function makeHelp(help_text) {
+            var help_active = false;
+            if (!help_text) return;
+            $('#help-text').text(help_text);
+            $('#help-button').click(function(e) {
+                $('#help-text').toggle();
+                help_active = !help_active;
+                $(this).text(help_active ? '-help' : '+help');
+            });
+            $('#help').show();  // Show the div with the button, not the text.
+        }
+
+        function makeColGroup(num_cols, column_widths) {
+            var w;
+            for (var i = 0; i < num_cols; i++) {
+                w = column_widths !== null ? column_widths[i] : 800 / num_cols;
+                $('<col>').css('width', w).appendTo('#activeTable colgroup');
+            }
+        }
+
+        function setRowHeight(row_height) {
+            $('#row-height-style').text(
+                'tr { height: ' + row_height + 'px; }\n' +
+                'input { height: ' + (row_height - 2) + 'px; }\n'
+            );
+        }
+
         state = JSON.parse(state);
-        makeHeadRow(state[0]).appendTo('#activeTable thead');
-        for (var i = 1; i < state.length; i++) {
-            $row = makeRow(state[i]);
+        makeHeadRow(state.data[0]).appendTo('#activeTable thead');
+        for (var i = 1; i < state.data.length; i++) {
+            $row = makeRow(state.data[i]);
             if (i % 2 === 0) {
                 $row.addClass('odd');
             }
             $row.appendTo('#activeTable tbody');
         }
+        makeHelp(state.help_text);
+        makeColGroup(state.data[0].length, state.column_widths);
+        setRowHeight(state.row_height);
     }
 
     return {

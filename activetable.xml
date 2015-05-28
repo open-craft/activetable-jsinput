@@ -4,7 +4,9 @@
 # This Python code defines and evaluates the problem. You usually don't need to touch the
 # first portion of the code and can jump to "Problem definition" near the end.
 
+import decimal
 import json
+
 
 class ResponseCell(object):
     """Abstract base class for response cells."""
@@ -23,12 +25,15 @@ class Numeric(ResponseCell):
 
     TYPE = 1
 
-    def __init__(self, answer, tolerance=None):
+    def __init__(self, answer, tolerance=None,
+                 min_significant_digits=None, max_significant_digits=None):
         """Set the correct answer and the allowed relative tolerance in percent."""
         self.answer = answer
         if tolerance is None:
             tolerance = default_tolerance
         self.abs_tolerance = abs(answer) * tolerance / 100.0
+        self.min_significant_digits = min_significant_digits;
+        self.max_significant_digits = max_significant_digits;
 
     def check_response(self, student_response):
         """Return a Boolean value indicating whether the student response is correct."""
@@ -36,6 +41,12 @@ class Numeric(ResponseCell):
             r = float(student_response)
         except ValueError:
             return False
+        if self.min_significant_digits or self.max_significant_digits:
+            d = len(decimal.Decimal(student_response).as_tuple().digits)
+            if self.min_significant_digits and d < self.min_significant_digits:
+                return False
+            if self.max_significant_digits and d > self.max_significant_digits:
+                return False
         return abs(r - self.answer) <= self.abs_tolerance
 
 
@@ -53,7 +64,7 @@ class String(ResponseCell):
         return student_response == self.answer
 
 
-def init(table):
+def init(table, help_text, column_widths, row_height):
     """Initialisation code for values exported to the XML code.
 
     The initial_state is a JSON string exported to the JavaScript code and used to construct
@@ -63,10 +74,24 @@ def init(table):
         [cell.get_state() if isinstance(cell, ResponseCell) else str(cell) for cell in row]
         for row in table
     ]
+    initial_state = dict(
+        data=data,
+        help_text=help_text,
+        column_widths=column_widths,
+        row_height=row_height,
+    )
     # Curiously, the JSON string must be doubly HTML-escaped.
-    initial_state = json.dumps(data).replace('&', '&amp;amp;').replace('"', '&amp;quot;')
-    height = 38 * len(table)  # Includes a bit of safety margin to avoid ugly scrollbars.
-    return initial_state, height
+    initial_state = json.dumps(initial_state).replace('&', '&amp;amp;').replace('"', '&amp;quot;')
+    # All heights and widths include a bit of safety margin to avoid scrollbars and rendering
+    # artifacts on some browsers.
+    if column_widths is not None:
+        width = sum(column_widths) + 2
+    else:
+        width = 800 + 2
+    height = (row_height + 1) * len(table)
+    if help_text:
+        height += (len(help_text) // 100 + 2) * 26
+    return initial_state, width, height
 
 
 def check_consistency(state):
@@ -75,9 +100,9 @@ def check_consistency(state):
     If not, the problem was edited in the mean time, and we ask the student to click
     the reset button (as we can't initiate resetting the problem from code).
     """
-    if len(table) != len(state):
+    if len(table) != len(state['data']):
         return False
-    for row, row_state in zip(table, state):
+    for row, row_state in zip(table, state['data']):
         if len(row) != len(row_state):
             return False
         for cell, cell_state in zip(row, row_state):
@@ -109,7 +134,7 @@ def check_table(unused_expect, ans):
         }
 
     correct_answers = total_questions = 0
-    for row, row_state in zip(table, state):
+    for row, row_state in zip(table, state['data']):
         for cell, cell_state in zip(row, row_state):
             if isinstance(cell, ResponseCell):
                 total_questions += 1
@@ -134,8 +159,16 @@ default_tolerance = 1.0
 # be either a string or number, which will simply be shown to the student, or one of the special
 # cell types Numeric() or String(), indicating a numeric or string input field that must be filled
 # in by the student.
+#
 # Syntax of the special cell types:
-#     Numeric(answer=<correct_answer>, tolerance=<tolerance in percent>)
+#
+#     Numeric(answer=<correct_answer>, tolerance=<tolerance in percent>,
+#             min_significant_digits=<number>, max_significant_digits=<number>)
+#         The tolerance is optional, and will default to the default tolerance specified above.
+#         The restrictions for the number of significant digits are optional as well.  Significant
+#         digits are counted started from the first non-zero digit specified by the student, and
+#         include trailing zeros.
+#
 #     String(answer='<correct answer>')
 table = [
     ['Spring #', 'Reading', 'Angle from 0 degrees'],
@@ -144,8 +177,24 @@ table = [
     ['3', Numeric(answer=6.0, tolerance=0.1), Numeric(answer=233.0, tolerance=0.5)],
 ]
 
+# Set the text that gets displayed when clicking the "+help" button.  Use "None" to disable the
+# help feature.
+#help_text = None
+help_text = "Fill in the yellow fields with the right values."
+
+# Set the width of the columns in pixels.  The total width of the table shouldn't be more than 800.
+# You can use "column_width = None" for equal-width columns with a total width of 800 pixels.
+column_widths = None
+#column_widths = [150, 150, 150, 150]
+
+# The height of a table row in pixels.  Rows may grow higher than the specified value if the text
+# in some cells in the row is long enough to get wrapped in more than one line.  If this happens,
+# you might need to replace "$height" close to the end of this file by a big enough value to
+# prevent a vertical scrollbar for the iframe from appearing.
+row_height = 36
+
 # Initialisation -- don't remove!
-initial_state, height = init(table)
+initial_state, width, height = init(table, help_text, column_widths, row_height)
 
 ]]>
 </script>
@@ -162,15 +211,12 @@ initial_state, height = init(table)
   the problem.  You can change the problem settings by clicking EDIT above, then
   SETTINGS in the top right corner of the edit window.
 </p>
-<p>
-  Fill in the yellow fields with the right values.
-</p>
 <customresponse cfn="check_table">
   <jsinput gradefn="ActiveTable.grade"
     get_statefn="ActiveTable.getState"
     set_statefn="ActiveTable.setState"
     initial_state="$initial_state"
-    width="800"
+    width="$width"
     height="$height"
     html_file="/static/activetable.html"
     sop="true"/>

@@ -1,14 +1,14 @@
 body {
     padding: 0;
     margin: 0;
-}
-table {
-    padding: 0;
-    margin: 0;
+    font: normal 1em/1.6em "Open Sans",Verdana,Geneva,sans-serif,sans-serif;
     color: #3c3c3c;
     background-color: #ffffff;
-    font: normal 1em/1.6em "Open Sans",Verdana,Geneva,sans-serif,sans-serif;
-    border: 1px solid #c0c0c0;
+}
+table {
+    clear: both;
+    padding: 0;
+    margin: 0;
     border-collapse: collapse;
 }
 tr {
@@ -21,8 +21,9 @@ tr.odd {
     background-color: #f0f0f0;
 }
 th, td {
-    padding: 5px 10px;
-    border-width: 0;
+    line-height: 1.5em;
+    padding: 0 10px;
+    border: 1px solid #c0c0c0;
 }
 th {
     text-align: left;
@@ -30,9 +31,13 @@ th {
 }
 /* cells that allow user input */
 td.active {
+    padding: 0;
+}
+/* Cells that haven't been checked yet */
+td.unchecked {
     background-color: #ffffe0;
 }
-tr.odd td.active {
+tr.odd td.unchecked {
     background-color: #f0f0d0;
 }
 /* cells containing wrong answers after clicking "Check" */
@@ -51,8 +56,37 @@ tr.odd td.right-answer {
 }
 input[type="text"] {
     font-size: 1em;
+    line-height: 1.5em;
     border: 0;
     padding: 0 10px;
     margin: 0;
-    background-color: rgba(0, 0, 0, 0);
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    background-color: transparent;
+}
+input[type="text"]:hover {
+    outline: 3px solid #a0a0ff;
+}
+input[type="text"]:focus {
+    outline: 3px solid #8080ff;
+}
+#help {
+    display: none;
+}
+#help-text {
+    display: none;
+    padding: 5px 10px;
+    margin: 0 0 10px;
+    border: 1px solid #c0c0c0;
+    background-color: #f0f0f0;
+}
+#help-button {
+    float: right;
+    padding: 6px 10px 0;
+    color: #009fe6;
+    cursor: pointer;
+}
+#help-button:hover {
+    color: #bd9730;
 }
