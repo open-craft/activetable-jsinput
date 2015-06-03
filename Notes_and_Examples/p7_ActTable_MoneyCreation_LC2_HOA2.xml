@@ -143,8 +143,8 @@ default_tolerance = 1.0
 table = [
     ['Reserve Ratio','Multiplier','New Demand Deposits','Change in Circulating Currency','Maximum Change in the Money Supply'],
     ['10%', Numeric(answer=10),Numeric(answer=30000),Numeric(answer=-3000),Numeric(answer=27000)],
-    ['20', Numeric(answer=5), Numeric(answer=15000), Numeric(answer=-3000), Numeric(answer=12000)],
-    ['25', Numeric(answer=4), Numeric(answer=12000), Numeric(answer=-3000), Numeric(answer=9000)],
+    ['20%', Numeric(answer=5), Numeric(answer=15000), Numeric(answer=-3000), Numeric(answer=12000)],
+    ['25%', Numeric(answer=4), Numeric(answer=12000), Numeric(answer=-3000), Numeric(answer=9000)],
 ]
 
 # Set the text that gets displayed when clicking the "+help" button.  Use "None" to disable the
@@ -175,7 +175,7 @@ initial_state, width, height = init(table, help_text, column_widths, row_height)
     set_statefn="ActiveTable.setState"
     initial_state="$initial_state"
     width="$width"
-    height="$height"
+    height="275"
     html_file="/static/activetable.html"
     sop="true"/>
 </customresponse>
