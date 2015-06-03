@@ -66,10 +66,10 @@ input[type="text"] {
     background-color: transparent;
 }
 input[type="text"]:hover {
-    outline: 2px solid #a0a0ff;
+    outline: 3px solid #a0a0ff;
 }
 input[type="text"]:focus {
-    outline: 2px solid #8080ff;
+    outline: 3px solid #8080ff;
 }
 #help {
     display: none;

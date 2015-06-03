@@ -5,12 +5,35 @@ var ActiveTable = (function () {
     NUMERIC = 1;
     STRING = 2;
 
+    // Helper function to determine the number of significant digits in a
+    // floating point literal.  Significant digits are counted from the first
+    // non-zero digit specified, but include trailing zeros.  The string s is
+    // assumed to be a valid floating-point literal and is not validated.
+    function significant_digits(s) {
+        // Regular expression to capture the digits before and after the decimal
+        // point, but not the digits in the exponent.
+        var re = /([0-9]*)\.([0-9]+)|([0-9]+)/;
+        // All specified digits without the decimal point and the exponent.
+        var all_digits = re.exec(s).slice(1).join('');
+        // The number of digits with leading zero digits removed.
+        return all_digits.replace(/^0+/, '').length;
+    }
+
     // Correctness checks for numeric and string inputs.  These functions are
     // reimplementations of the corresponding functions in the Python code.
     check_response = {};
     check_response[NUMERIC] = function(self, student_response) {
-        var r = parseFloat(student_response);
+        var r = parseFloat(student_response), d;
         if (isNaN(r)) return false;
+        if (self.min_significant_digits || self.max_significant_digits) {
+            d = significant_digits(student_response);
+            if (self.min_significant_digits && d < self.min_significant_digits) {
+                return false;
+            }
+            if (self.max_significant_digits && d > self.max_significant_digits) {
+                return false;
+            }
+        }
         return Math.abs(r - self.answer) <= self.abs_tolerance;
     };
     check_response[STRING] = function(self, student_response) {
@@ -28,8 +51,8 @@ var ActiveTable = (function () {
         // function embedded in XML determines correctness independently of this
         // function.
         $('#activeTable input').each(function() {
-            var $input = $(this), data = $input.data();
-            $input.data('correct', check_response[data.type](data, this.value));
+            var $input = $(this), cell_data = $input.data();
+            $input.data('correct', check_response[cell_data.type](cell_data, this.value));
         });
         return state;
     }
@@ -38,7 +61,7 @@ var ActiveTable = (function () {
         // Extract the current state of the table.  The state includes the
         // complete problem description and the values entered by the student.
         var
-            state = [],
+            data = [],
             help_text = $('#help-text').text() || null;
             column_widths = [],
             row_height = parseInt($('tr').css('height'));
@@ -46,16 +69,16 @@ var ActiveTable = (function () {
         function appendRow() {
             var row_state = [];
             $(this).children().each(function() {
-                var $cell = $(this), $input = $('input', this), data;
+                var $cell = $(this), $input = $('input', this), cell_data;
                 if (typeof $input[0] === 'undefined') {
                     row_state.push($cell.text());
                 } else {
-                    data = $input.data();
-                    data.value = $('input', this)[0].value;
-                    row_state.push(data);
+                    cell_data = $input.data();
+                    cell_data.value = $('input', this)[0].value;
+                    row_state.push(cell_data);
                 }
             });
-            state.push(row_state);
+            data.push(row_state);
         }
 
         function appendCol() {
@@ -66,7 +89,7 @@ var ActiveTable = (function () {
         $('#activeTable tbody tr').each(appendRow);
         $('#activeTable colgroup col').each(appendCol);
         return JSON.stringify({
-            data: state,
+            data: data,
             help_text: help_text,
             column_widths: column_widths,
             row_height: row_height,

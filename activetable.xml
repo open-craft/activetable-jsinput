@@ -3,6 +3,7 @@
 <![CDATA[
 # This Python code defines and evaluates the problem. You usually don't need to touch the
 # first portion of the code and can jump to "Problem definition" near the end.
+import decimal
 import json
 class ResponseCell(object):
     """Abstract base class for response cells."""
@@ -15,18 +16,27 @@ class ResponseCell(object):
 class Numeric(ResponseCell):
     """A numeric response cell."""
     TYPE = 1
-    def __init__(self, answer, tolerance=None):
+    def __init__(self, answer, tolerance=None,
+                 min_significant_digits=None, max_significant_digits=None):
         """Set the correct answer and the allowed relative tolerance in percent."""
         self.answer = answer
         if tolerance is None:
             tolerance = default_tolerance
         self.abs_tolerance = abs(answer) * tolerance / 100.0
+        self.min_significant_digits = min_significant_digits;
+        self.max_significant_digits = max_significant_digits;
     def check_response(self, student_response):
         """Return a Boolean value indicating whether the student response is correct."""
         try:
             r = float(student_response)
         except ValueError:
             return False
+        if self.min_significant_digits or self.max_significant_digits:
+            d = len(decimal.Decimal(student_response).as_tuple().digits)
+            if self.min_significant_digits and d < self.min_significant_digits:
+                return False
+            if self.max_significant_digits and d > self.max_significant_digits:
+                return False
         return abs(r - self.answer) <= self.abs_tolerance
 class String(ResponseCell):
     """A string response cell."""
@@ -119,15 +129,22 @@ default_tolerance = 1.0
 # be either a string or number, which will simply be shown to the student, or one of the special
 # cell types Numeric() or String(), indicating a numeric or string input field that must be filled
 # in by the student.
+#
 # Syntax of the special cell types:
-#     Numeric(answer=<correct_answer>, tolerance=<tolerance in percent>)
+#
+#     Numeric(answer=<correct_answer>, tolerance=<tolerance in percent>,
+#             min_significant_digits=<number>, max_significant_digits=<number>)
+#         The tolerance is optional, and will default to the default tolerance specified above.
+#         The restrictions for the number of significant digits are optional as well.  Significant
+#         digits are counted started from the first non-zero digit specified by the student, and
+#         include trailing zeros.
+#
 #     String(answer='<correct answer>')
 table = [
-    ['Carts', 'v_initial', 'v_final', 'Delta v'],
-    ['green', 2.0, -1.2, Numeric(answer=-3.2, tolerance=2.0)],
-    ['red', -2.0, 1.2, Numeric(answer=3.2)],
-    ['yellow', -1.4, 0.0, Numeric(answer=1.4)],
-    ['purple', 3.4, 2.1, Numeric(answer=-1.3)],
+    ['Spring #', 'Reading', 'Angle from 0 degrees'],
+    ['1', 10.0, 0],
+    ['2', Numeric(answer=8.0, tolerance=0.1), Numeric(answer=144.0, tolerance=0.5)],
+    ['3', Numeric(answer=6.0, tolerance=0.1), Numeric(answer=233.0, tolerance=0.5)],
 ]
 # Set the text that gets displayed when clicking the "+help" button.  Use "None" to disable the
 # help feature.
@@ -138,7 +155,7 @@ help_text = "Fill in the yellow fields with the right values."
 column_widths = None
 #column_widths = [150, 150, 150, 150]
 # The height of a table row in pixels.  Rows may grow higher than the specified value if the text
-# in some cells in the row is long enough to get wrapped in more than more lines.  If this happens,
+# in some cells in the row is long enough to get wrapped in more than one line.  If this happens,
 # you might need to replace "$height" close to the end of this file by a big enough value to
 # prevent a vertical scrollbar for the iframe from appearing.
 row_height = 36
