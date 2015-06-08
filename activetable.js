@@ -42,8 +42,8 @@ var ActiveTable = (function () {
 
     // Placeholder strings for the different input types
     placeholder = {};
-    placeholder[NUMERIC] = 'numeric response'
-    placeholder[STRING] = 'text response'
+    placeholder[NUMERIC] = 'numeric response';
+    placeholder[STRING] = 'text response';
 
     function grade(state) {
         // This function attaches correctness information to each input field.
@@ -62,13 +62,14 @@ var ActiveTable = (function () {
         // complete problem description and the values entered by the student.
         var
             data = [],
-            help_text = $('#help-text').text() || null;
+            help_text = $('#help-text').text() || null,
             column_widths = [],
-            row_height = parseInt($('tr').css('height'));
+            row_heights = [];
 
         function appendRow() {
             var row_state = [];
-            $(this).children().each(function() {
+            var row = $(this);
+            row.children().each(function() {
                 var $cell = $(this), $input = $('input', this), cell_data;
                 if (typeof $input[0] === 'undefined') {
                     row_state.push($cell.text());
@@ -79,6 +80,7 @@ var ActiveTable = (function () {
                 }
             });
             data.push(row_state);
+            row_heights.push(row.css('height'))
         }
 
         function appendCol() {
@@ -92,7 +94,7 @@ var ActiveTable = (function () {
             data: data,
             help_text: help_text,
             column_widths: column_widths,
-            row_height: row_height,
+            row_heights: row_heights
         });
     }
 
@@ -171,11 +173,14 @@ var ActiveTable = (function () {
             }
         }
 
-        function setRowHeight(row_height) {
-            $('#row-height-style').text(
-                'tr { height: ' + row_height + 'px; }\n' +
-                'input { height: ' + (row_height - 2) + 'px; }\n'
-            );
+        function setRowHeights(heights) {
+            var rows = $('#activeTable tr');
+            $(heights).each(function (index, value) {
+                value = parseInt(value);
+                var row = $(rows[index]);
+                row.css('height', value + 'px');
+                row.find('input').css('height', value - 2 + 'px');
+            });
         }
 
         state = JSON.parse(state);
@@ -189,12 +194,12 @@ var ActiveTable = (function () {
         }
         makeHelp(state.help_text);
         makeColGroup(state.data[0].length, state.column_widths);
-        setRowHeight(state.row_height);
+        setRowHeights(state.row_heights)
     }
 
     return {
         grade: grade,
         getState: getState,
-        setState: setState,
+        setState: setState
     };
 }());
