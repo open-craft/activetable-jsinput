@@ -64,7 +64,7 @@ var ActiveTable = (function () {
             data = [],
             help_text = $('#help-text').text() || null;
             column_widths = [],
-            row_height = parseInt($('tr').css('height'));
+            row_height = parseInt($('tbody tr').css('height'));
 
         function appendRow() {
             var row_state = [];
