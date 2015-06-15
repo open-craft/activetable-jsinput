@@ -1,5 +1,5 @@
 var ActiveTable = (function () {
-    var  NUMERIC, STRING, check_response, placeholder;
+    var  NUMERIC, STRING, check_response, placeholder, help_text, column_widths, row_heights;
 
     // Input type values must match the type values in the Python code.
     NUMERIC = 1;
@@ -60,11 +60,7 @@ var ActiveTable = (function () {
     function getState() {
         // Extract the current state of the table.  The state includes the
         // complete problem description and the values entered by the student.
-        var
-            data = [],
-            help_text = $('#help-text').text() || null,
-            column_widths = [],
-            row_heights = [];
+        var data = [];
 
         function appendRow() {
             var row_state = [];
@@ -80,16 +76,10 @@ var ActiveTable = (function () {
                 }
             });
             data.push(row_state);
-            row_heights.push(row.css('height'))
         }
-
-        function appendCol() {
-            column_widths.push(parseInt($(this).css('width')));
-        }
-
+        
         $('#activeTable thead tr').each(appendRow);
         $('#activeTable tbody tr').each(appendRow);
-        $('#activeTable colgroup col').each(appendCol);
         return JSON.stringify({
             data: data,
             help_text: help_text,
@@ -153,7 +143,7 @@ var ActiveTable = (function () {
             return $row;
         }
 
-        function makeHelp(help_text) {
+        function makeHelp() {
             var help_active = false;
             if (!help_text) return;
             $('#help-text').text(help_text);
@@ -165,7 +155,7 @@ var ActiveTable = (function () {
             $('#help').show();  // Show the div with the button, not the text.
         }
 
-        function makeColGroup(num_cols, column_widths) {
+        function makeColGroup(num_cols) {
             var w;
             for (var i = 0; i < num_cols; i++) {
                 w = column_widths !== null ? column_widths[i] : 800 / num_cols;
@@ -173,9 +163,9 @@ var ActiveTable = (function () {
             }
         }
 
-        function setRowHeights(heights) {
+        function setRowHeights() {
             var rows = $('#activeTable tr');
-            $(heights).each(function (index, value) {
+            $(row_heights).each(function (index, value) {
                 value = parseInt(value);
                 var row = $(rows[index]);
                 row.css('height', value + 'px');
@@ -192,9 +182,12 @@ var ActiveTable = (function () {
             }
             $row.appendTo('#activeTable tbody');
         }
-        makeHelp(state.help_text);
-        makeColGroup(state.data[0].length, state.column_widths);
-        setRowHeights(state.row_heights)
+        help_text = state.help_text;
+        makeHelp();
+        column_widths = state.column_widths;
+        makeColGroup(state.data[0].length);
+        row_heights = state.row_heights;
+        setRowHeights();
     }
 
     return {
