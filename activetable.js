@@ -1,5 +1,5 @@
 var ActiveTable = (function () {
-    var  NUMERIC, STRING, check_response, placeholder;
+    var  NUMERIC, STRING, check_response, placeholder, help_text, column_widths, row_heights;
 
     // Input type values must match the type values in the Python code.
     NUMERIC = 1;
@@ -42,8 +42,8 @@ var ActiveTable = (function () {
 
     // Placeholder strings for the different input types
     placeholder = {};
-    placeholder[NUMERIC] = 'numeric response'
-    placeholder[STRING] = 'text response'
+    placeholder[NUMERIC] = 'numeric response';
+    placeholder[STRING] = 'text response';
 
     function grade(state) {
         // This function attaches correctness information to each input field.
@@ -60,15 +60,12 @@ var ActiveTable = (function () {
     function getState() {
         // Extract the current state of the table.  The state includes the
         // complete problem description and the values entered by the student.
-        var
-            data = [],
-            help_text = $('#help-text').text() || null;
-            column_widths = [],
-            row_height = parseInt($('tbody tr').css('height'));
+        var data = [];
 
         function appendRow() {
             var row_state = [];
-            $(this).children().each(function() {
+            var row = $(this);
+            row.children().each(function() {
                 var $cell = $(this), $input = $('input', this), cell_data;
                 if (typeof $input[0] === 'undefined') {
                     row_state.push($cell.text());
@@ -80,19 +77,14 @@ var ActiveTable = (function () {
             });
             data.push(row_state);
         }
-
-        function appendCol() {
-            column_widths.push(parseInt($(this).css('width')));
-        }
-
+        
         $('#activeTable thead tr').each(appendRow);
         $('#activeTable tbody tr').each(appendRow);
-        $('#activeTable colgroup col').each(appendCol);
         return JSON.stringify({
             data: data,
             help_text: help_text,
             column_widths: column_widths,
-            row_height: row_height,
+            row_heights: row_heights
         });
     }
 
@@ -151,7 +143,7 @@ var ActiveTable = (function () {
             return $row;
         }
 
-        function makeHelp(help_text) {
+        function makeHelp() {
             var help_active = false;
             if (!help_text) return;
             $('#help-text').text(help_text);
@@ -163,7 +155,7 @@ var ActiveTable = (function () {
             $('#help').show();  // Show the div with the button, not the text.
         }
 
-        function makeColGroup(num_cols, column_widths) {
+        function makeColGroup(num_cols) {
             var w;
             for (var i = 0; i < num_cols; i++) {
                 w = column_widths !== null ? column_widths[i] : 800 / num_cols;
@@ -171,11 +163,14 @@ var ActiveTable = (function () {
             }
         }
 
-        function setRowHeight(row_height) {
-            $('#row-height-style').text(
-                'tr { height: ' + row_height + 'px; }\n' +
-                'input { height: ' + (row_height - 2) + 'px; }\n'
-            );
+        function setRowHeights() {
+            var rows = $('#activeTable tr');
+            $(row_heights).each(function (index, value) {
+                value = parseInt(value);
+                var row = $(rows[index]);
+                row.css('height', value + 'px');
+                row.find('input').css('height', value - 2 + 'px');
+            });
         }
 
         state = JSON.parse(state);
@@ -187,14 +182,17 @@ var ActiveTable = (function () {
             }
             $row.appendTo('#activeTable tbody');
         }
-        makeHelp(state.help_text);
-        makeColGroup(state.data[0].length, state.column_widths);
-        setRowHeight(state.row_height);
+        help_text = state.help_text;
+        makeHelp();
+        column_widths = state.column_widths;
+        makeColGroup(state.data[0].length);
+        row_heights = state.row_heights;
+        setRowHeights();
     }
 
     return {
         grade: grade,
         getState: getState,
-        setState: setState,
+        setState: setState
     };
 }());

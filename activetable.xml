@@ -47,7 +47,7 @@ class String(ResponseCell):
     def check_response(self, student_response):
         """Return a Boolean value indicating whether the student response is correct."""
         return student_response == self.answer
-def init(table, help_text, column_widths, row_height):
+def init(table, help_text, column_widths, row_heights):
     """Initialisation code for values exported to the XML code.
     The initial_state is a JSON string exported to the JavaScript code and used to construct
     the table.  The height is the height of the iframe in pixels.
@@ -60,7 +60,7 @@ def init(table, help_text, column_widths, row_height):
         data=data,
         help_text=help_text,
         column_widths=column_widths,
-        row_height=row_height,
+        row_heights=row_heights,
     )
     # Curiously, the JSON string must be doubly HTML-escaped.
     initial_state = json.dumps(initial_state).replace('&', '&amp;amp;').replace('"', '&amp;quot;')
@@ -70,7 +70,7 @@ def init(table, help_text, column_widths, row_height):
         width = sum(column_widths) + 2
     else:
         width = 800 + 2
-    height = (row_height + 1) * len(table)
+    height = sum(row_heights) + len(row_heights)
     if help_text:
         height += (len(help_text) // 100 + 2) * 26
     return initial_state, width, height
@@ -154,13 +154,13 @@ help_text = "Fill in the yellow fields with the right values."
 # You can use "column_width = None" for equal-width columns with a total width of 800 pixels.
 column_widths = None
 #column_widths = [150, 150, 150, 150]
-# The height of a table row in pixels.  Rows may grow higher than the specified value if the text
+# The heights of the table rows in pixels.  Rows may grow higher than the specified value if the text
 # in some cells in the row is long enough to get wrapped in more than one line.  If this happens,
 # you might need to replace "$height" close to the end of this file by a big enough value to
 # prevent a vertical scrollbar for the iframe from appearing.
-row_height = 36
+row_heights = [36, 36, 36, 36]
 # Initialisation -- don't remove!
-initial_state, width, height = init(table, help_text, column_widths, row_height)
+initial_state, width, height = init(table, help_text, column_widths, row_heights)
 ]]>
 </script>
 <p>
